@@ -1,0 +1,37 @@
+services:
+  web:
+    build: .
+    container_name: web_app
+    command: gunicorn project.wsgi:application --bind 0.0.0.0:14004
+    ports:
+      - "14004:14004"
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings
+
+  worker:
+    build: .
+    container_name: celery_worker
+    command: celery -A project worker --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/app
+    environment:
+      - DJANGO_SETTINGS_MODULE=project.settings
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6381:6381"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
