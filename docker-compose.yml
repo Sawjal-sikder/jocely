@@ -2,9 +2,9 @@ services:
   web:
     build: .
     container_name: web_app
-    command: gunicorn project.wsgi:application --bind 0.0.0.0:14004
+    command: gunicorn project.wsgi:application --bind 0.0.0.0:14005
     ports:
-      - "14004:14004"
+      - "14005:14005"
     depends_on:
       redis:
         condition: service_healthy
@@ -29,7 +29,7 @@ services:
     image: redis:7-alpine
     container_name: redis
     ports:
-      - "6381:6381"
+      - "6382:6382"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

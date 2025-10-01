@@ -17,8 +17,9 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+
 # Copy project files
 COPY . .
 
 # Expose Django port
-EXPOSE 14004
+EXPOSE 14005
