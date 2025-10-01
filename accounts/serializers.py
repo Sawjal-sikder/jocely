@@ -358,3 +358,17 @@ class UserDetailSerializer(serializers.ModelSerializer):
                   'profile_picture',
                   'is_active'
                   ]
+
+
+class UserQuestionAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserQuestionAnswer
+        fields = ['id','user_id', 'user', 'skin_status', 'hydration_goal', 'feeling_today', 'how_many_prayers', 'top_skin_goal', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at','user_id' ,"user"]
+        
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user_id'] = instance.user.id
+        representation['user'] = instance.user.full_name or instance.user.email
+    
+        return representation

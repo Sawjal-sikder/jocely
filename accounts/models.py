@@ -82,3 +82,18 @@ class PasswordResetCode(models.Model):
     def is_expired(self):
         return self.created_at + timedelta(minutes=2) < timezone.now()
     
+
+class UserQuestionAnswer(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    skin_status = models.CharField(max_length=255)
+    hydration_goal = models.CharField(max_length=255)
+    feeling_today = models.CharField(max_length=255)
+    how_many_prayers = models.CharField(max_length=255)
+    top_skin_goal = models.CharField(max_length=255)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Answers of {self.user.email}"
+    

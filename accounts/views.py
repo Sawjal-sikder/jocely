@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError, PermissionDenied
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework import generics, status, permissions
@@ -5,7 +6,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from .serializers import *
-
+from .models import *
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -203,3 +204,35 @@ class DeleteAccountView(generics.DestroyAPIView):
         user = self.get_object()
         user.delete()
         return Response({"detail": "Account deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+    
+
+class UserQuestionAnswerCreateListView(generics.ListCreateAPIView):
+    queryset = UserQuestionAnswer.objects.all()
+    serializer_class = UserQuestionAnswerSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+class UserQuestionAnswerRetrieveView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = UserQuestionAnswer.objects.all()
+    serializer_class = UserQuestionAnswerSerializer
+
+    def get_object(self):
+        obj = super().get_object()
+        if obj.user != self.request.user:
+            raise PermissionDenied("You do not have permission to access this object.")
+        return obj
+    
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"detail": "Deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+    def patch(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', True)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"detail": "Update Successful", "data": serializer.data}, status=status.HTTP_200_OK)
