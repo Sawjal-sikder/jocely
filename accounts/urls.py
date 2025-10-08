@@ -24,7 +24,7 @@ urlpatterns = [
     
     # update profile
     path('auth/profile/update/', UpdateProfileView.as_view(), name='profile-update'),
-    path('user/profile/<int:pk>/', UserTriggerView.as_view(), name='user-trigger'),
+    path('user/profile/<int:pk>/', UserUpdateView.as_view(), name='user-update'),
     path('auth/user/list/', UserListView.as_view(), name='user-list'),
     
     path('auth/user/question/', UserQuestionAnswerCreateListView.as_view(), name='user-question'),

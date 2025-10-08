@@ -286,11 +286,12 @@ class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
 
-class UserTriggerSerializer(serializers.ModelSerializer):
+class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 'is_active']
+        fields = ['id', 'full_name', 'email', 'phone_number', 'profile_picture', 'is_active']
         read_only_fields = ['id']
+        
 
 
 class UpdateProfileSerializer(serializers.ModelSerializer):

@@ -155,17 +155,9 @@ class UpdateProfileView(generics.UpdateAPIView):
     def get_object(self):
         return self.request.user
     
-class UserTriggerView(generics.RetrieveUpdateAPIView):
+class UserUpdateView(generics.RetrieveUpdateAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = UserTriggerSerializer
-
-    def patch(self, request, *args, **kwargs):
-        """Toggle is_active for a user"""
-        user = self.get_object()
-        user.is_active = request.data.get('is_active', user.is_active)
-        user.save()
-        serializer = self.get_serializer(user)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    serializer_class = UserUpdateSerializer
     
     
 class UserListView(generics.ListAPIView):
