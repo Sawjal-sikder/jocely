@@ -346,8 +346,8 @@ class UserSerializer(serializers.ModelSerializer):
                   'is_active'
                   ]
         
-    def get_count_referrals(self, obj):
-        return CustomUser.objects.filter(referred_by=obj.referral_code).count()
+    # def get_count_referrals(self, obj):
+    #     return CustomUser.objects.filter(referred_by=obj.referral_code).count()
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:

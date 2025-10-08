@@ -45,3 +45,27 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+
+class SubscriptionListSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Subscription
+        fields = ['id', 'user', 'plan', 'status', 'auto_renew', 'trial_end', 'current_period_end', 'created_at']
+        read_only_fields = (
+            "user",
+            "stripe_customer_id",
+            "stripe_subscription_id",
+            "status",
+            "auto_renew",
+            "trial_end",
+            "current_period_end",
+            "created_at",
+            "updated_at",
+        )
+        
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = instance.user.full_name
+        representation['plan'] = instance.plan.name
+        return representation

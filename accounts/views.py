@@ -5,8 +5,11 @@ from rest_framework import generics, status, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from payment.serializers import SubscriptionListSerializer, SubscriptionSerializer
 from .serializers import *
 from .models import *
+from payment.models import *
 
 class RegisterView(generics.CreateAPIView):
     serializer_class = RegisterSerializer
@@ -228,3 +231,34 @@ class UserQuestionAnswerRetrieveView(generics.RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({"detail": "Update Successful", "data": serializer.data}, status=status.HTTP_200_OK)
+    
+    
+class DashboardView(APIView):
+    # return user dashboard data like total users, total active users, total inactive users, recent users and total subscriptions, total active subscriptions, total inactive subscriptions
+    def get(self, request, *args, **kwargs):
+        total_users = CustomUser.objects.count()
+        total_active_users = CustomUser.objects.filter(is_active=True).count()
+        recent_users = CustomUser.objects.order_by('-created_at')[:5]
+        recent_users_data = UserSerializer(recent_users, many=True).data[-5:]
+        
+        # total subscriptions, total active subscriptions, total inactive subscriptions
+        total_subscriptions = Subscription.objects.count()
+        total_pending_subscriptions = Subscription.objects.filter(status='pending').count()
+        total_trial_subscriptions = Subscription.objects.filter(status='trialing').count()
+        total_active_subscriptions = Subscription.objects.filter(status='active').count()
+        total_active_subscriptions_plan = Plan.objects.filter(active=True).count()
+        recent_subscriptions = Subscription.objects.order_by('-created_at')[:5]
+        recent_subscriptions_data = SubscriptionListSerializer(recent_subscriptions, many=True).data[-5:]
+
+        data = {
+            "total_users": total_users,
+            "total_active_users": total_active_users,
+            "recent_users": recent_users_data,
+            "total_subscriptions": total_subscriptions,
+            "total_pending_subscriptions": total_pending_subscriptions,
+            "total_trial_subscriptions": total_trial_subscriptions,
+            "total_active_subscriptions": total_active_subscriptions,
+            "total_subscription_plans": total_active_subscriptions_plan,
+            "recent_subscriptions_data": recent_subscriptions_data,
+        }
+        return Response(data, status=status.HTTP_200_OK)

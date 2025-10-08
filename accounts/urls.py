@@ -29,4 +29,7 @@ urlpatterns = [
     
     path('auth/user/question/', UserQuestionAnswerCreateListView.as_view(), name='user-question'),
     path('auth/user/question/<int:pk>/', UserQuestionAnswerRetrieveView.as_view(), name='user-question-detail'),
+
+    # Dashboard
+    path('auth/dashboard/', DashboardView.as_view(), name='dashboard'),
 ]
