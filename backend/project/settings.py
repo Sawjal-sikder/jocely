@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     # for app
     'accounts',
     'payment',
+    "shop",
 
 ]
 
