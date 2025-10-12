@@ -103,3 +103,54 @@ class ReviewCreateListView(generics.ListCreateAPIView):
         if Review.objects.filter(user=user, product=product).exists():
             raise serializers.ValidationError("You have already reviewed this product.")
         serializer.save(user=user)
+        
+        
+class CartView(generics.ListCreateAPIView):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        user = self.request.user
+        return Cart.objects.filter(user=user)
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        product = serializer.validated_data.get('product')
+        quantity = serializer.validated_data.get('quantity', 1)
+
+        # Prevent duplicates and handle quantity updates
+        cart_item, created = Cart.objects.get_or_create(
+            user=user, 
+            product=product,
+            defaults={'quantity': quantity}
+        )
+        if not created:
+            cart_item.quantity += quantity
+            cart_item.save()
+        
+        # Update the serializer instance to point to the cart_item
+        serializer.instance = cart_item
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        
+        # Build cart items manually
+        cart_items = []
+        for item in queryset:
+            cart_items.append({
+                'id': item.id,
+                'product': item.product.name,
+                'product_image': item.product.image1.url if item.product.image1 else None,
+                'quantity': item.quantity,
+                'unite_price': item.product.discount_price if item.product.discount_price else item.product.price,
+                'total_price': item.get_total_price()
+            })
+
+        # Calculate grand total for all cart items
+        grand_total = sum(item.get_total_price() for item in queryset)
+
+        return Response({
+            'cart_items': cart_items,
+            'grand_total_price': round(grand_total, 2)
+        })

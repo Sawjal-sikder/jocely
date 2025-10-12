@@ -12,4 +12,7 @@ urlpatterns = [
     
     # Review URLs can be added later as needed
     path('reviews/', ReviewCreateListView.as_view(), name='review-list-create'),
+    
+    # Cart URLs can be added later as needed
+    path('create/add-cart/', CartView.as_view(), name='cart-create'),
 ]

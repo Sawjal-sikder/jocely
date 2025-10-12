@@ -28,6 +28,7 @@ class ProductListSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         representation['discount_percentage'] = instance.get_discount_percentage()
         representation['category'] = instance.category.name if instance.category else None
+        representation['total_reviews'] = instance.reviews.count()
         representation['average_rating'] = instance.reviews.aggregate(avg_rating=Avg('rating'))['avg_rating'] or 0.0
         representation['reviews'] = SimpleReviewSerializer(instance.reviews.all(), many=True).data
 
@@ -45,3 +46,18 @@ class ReviewSerializer(serializers.ModelSerializer):
         model = Review
         fields = ['id', 'product', 'user', 'rating', 'comment', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
+        
+
+
+class CartSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+    total_price = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'product', 'product_name', 'quantity', 'added_at', 'updated_at', 'total_price']
+        read_only_fields = ['id', 'user', 'added_at', 'updated_at', 'product_name', 'total_price']
+
+    def get_total_price(self, obj):
+        return obj.get_total_price()
+    
