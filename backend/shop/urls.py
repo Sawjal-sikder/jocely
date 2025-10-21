@@ -3,6 +3,7 @@ from .views import *
 
 urlpatterns = [
     path('categories/', CategoryCreateListView.as_view(), name='category-list-create'),
+    path('categories/dashboard/', CategoryDashboardView.as_view(), name='category-dashboard'),
     path('categories/<int:id>/', CategoryDetailView.as_view(), name='category-detail'),
     
     # product URLs can be added later as needed

@@ -12,6 +12,21 @@ class CategoryCreateListView(generics.ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     
+class CategoryDashboardView(generics.ListAPIView):
+    def get(self, request, *args, **kwargs):
+        total_categories = Category.objects.count()
+        total_products = Product.objects.count()
+        total_active_products = Product.objects.filter(is_active=True).count()
+        total_reviews = Review.objects.count()
+        
+        data = {
+            "total_categories": total_categories,
+            "total_products": total_products,
+            "total_active_products": total_active_products,
+            "total_reviews": total_reviews,
+        }
+        return Response(data, status=status.HTTP_200_OK)
+    
     
 class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()

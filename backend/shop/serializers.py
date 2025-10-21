@@ -6,8 +6,14 @@ class CategorySerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Category
-        fields = ['id', 'name', 'description', 'parent',]
+        fields = ['id', 'name', 'description', 'parent', 'is_active', 'created_at']
         read_only_fields = ['id']
+        
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['productCount'] = instance.products.count()
+        return representation
+        
 
 # ProductSerializer can be added later as needed
 class CreateProductSerializer(serializers.ModelSerializer):
