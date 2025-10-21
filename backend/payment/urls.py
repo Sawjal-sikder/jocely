@@ -12,6 +12,7 @@ urlpatterns = [
       path("subscription/stop-autorenew/", SubscriptionStopAutoRenewalView.as_view(), name="auto-renew"),
       
       # stripe subscription plans
+      path("plans/all/", PlanListView.as_view(), name="plan-list"),
       path("plans/", PlanListCreateView.as_view(), name="plan-list-create"),
       path("plans/<int:id>/", PlanUpdateView.as_view(), name="plan-update"),
       path("test-referral-benefits/", TestReferralBenefitsView.as_view(), name="test-referral-benefits"),

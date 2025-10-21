@@ -106,6 +106,9 @@ def process_referral_benefits(user, subscription):
         import traceback
         logger.error(f"Traceback: {traceback.format_exc()}")
 
+class PlanListView(generics.ListAPIView):
+    queryset = Plan.objects.all()
+    serializer_class = PlanSerializer
 
 
 class PlanListCreateView(generics.ListCreateAPIView):

@@ -1,4 +1,5 @@
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.shortcuts import render
 from rest_framework import generics
@@ -50,9 +51,10 @@ class ProductListView(generics.ListAPIView):
     filterset_fields = ['category__name']
     ordering_fields = ['price', 'created_at']
     ordering = ['-created_at']
+    permission_classes = [AllowAny]
     
     def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True)
+        queryset = Product.objects.all()
         category = self.request.query_params.get('category', None)
         search = self.request.query_params.get('search', None)
 
@@ -104,7 +106,26 @@ class ReviewCreateListView(generics.ListCreateAPIView):
             raise serializers.ValidationError("You have already reviewed this product.")
         serializer.save(user=user)
         
-        
+class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    lookup_field = 'id'
+    
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"message": "Review deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+    
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"message": "Review updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+    
+    
+# Cart views can be added later as needed
 class CartView(generics.ListCreateAPIView):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
@@ -154,3 +175,27 @@ class CartView(generics.ListCreateAPIView):
             'cart_items': cart_items,
             'grand_total_price': round(grand_total, 2)
         })
+
+
+class CartDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    lookup_field = 'id'
+
+    def get_object(self):
+        user = self.request.user
+        cart_id = self.kwargs.get('id')
+        return generics.get_object_or_404(Cart, id=cart_id, user=user)
+
+    def delete(self, request, *args, **kwargs):
+        instance = self.get_object()
+        self.perform_destroy(instance)
+        return Response({"message": "Cart item deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response({"message": "Cart item updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)

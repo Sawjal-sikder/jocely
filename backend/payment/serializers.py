@@ -1,6 +1,10 @@
 from rest_framework import serializers
 from .models import Plan, Subscription
 
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
 class PlanSerializer(serializers.ModelSerializer):
     class Meta:
         model = Plan
@@ -45,6 +49,11 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+        
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = User.objects.get(id=instance.user.id).full_name
+        return representation
 
 
 class SubscriptionListSerializer(serializers.ModelSerializer):
