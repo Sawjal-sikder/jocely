@@ -54,15 +54,18 @@ class ProductListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     
     def get_queryset(self):
-        queryset = Product.objects.all()
-        category = self.request.query_params.get('category', None)
-        search = self.request.query_params.get('search', None)
+        # Detect which URL is hit
+        is_admin_path = self.request.path.endswith('/admin/')
+        
+        queryset = Product.objects.all() if is_admin_path else Product.objects.filter(is_active=True)
+
+        category = self.request.query_params.get('category')
+        search = self.request.query_params.get('search')
 
         if category:
             queryset = queryset.filter(category__name__iexact=category)
         if search:
             queryset = queryset.filter(name__icontains=search)
-
         return queryset
     
 
