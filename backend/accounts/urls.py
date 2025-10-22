@@ -33,5 +33,5 @@ urlpatterns = [
     # Dashboard
     path('auth/dashboard/', DashboardView.as_view(), name='dashboard'),
     path('auth/cretiential/', ProjectCretientialsView.as_view(), name='project-cretiential'),
-    path('auth/cretiential/<int:pk>/'), ProjectCretientialsDetailView.as_view(), name='project-cretiential-detail'),
+    path('auth/cretiential/<int:pk>/', ProjectCretientialsDetailView.as_view(), name='project-cretiential-detail'),
 ]
