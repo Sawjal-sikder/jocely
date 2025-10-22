@@ -1,21 +1,18 @@
-import uuid
 import random
-from django.db import models
+import uuid
 from datetime import timedelta
-from django.urls import reverse
-from django.utils import timezone
-from django.core.mail import send_mail
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.core.mail import send_mail
+from django.db import models
+from django.urls import reverse
+from django.utils import timezone
 
-
-from project import settings
 
 class CustomUserManager(BaseUserManager):
     def create_user(self, email, full_name, phone_number, password=None, **extra_fields):
         if not email:
             raise ValueError('Email must be set')
-        
 
         email = self.normalize_email(email)
         user = self.model(email=email, full_name=full_name, phone_number=phone_number, **extra_fields)
@@ -35,7 +32,6 @@ class CustomUserManager(BaseUserManager):
 
         return self.create_user(email, full_name, phone_number, password, **extra_fields)
 
-    
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
@@ -52,21 +48,20 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['full_name', 'phone_number']
 
-
     def __str__(self):
         return self.full_name or self.email or f"User {self.pk}"
-
 
     def email_user(self, subject, message, from_email=None, **kwargs):
         """Send an email to this user."""
         send_mail(subject, message, from_email, [self.email], **kwargs)
-        
+
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"
 
 
 User = get_user_model()
+
 
 class PasswordResetCode(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -78,10 +73,10 @@ class PasswordResetCode(models.Model):
         if not self.code:
             self.code = f"{random.randint(100000, 999999)}"
         super().save(*args, **kwargs)
-        
+
     def is_expired(self):
         return self.created_at + timedelta(minutes=2) < timezone.now()
-    
+
 
 class UserQuestionAnswer(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
@@ -93,7 +88,18 @@ class UserQuestionAnswer(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     def __str__(self):
         return f"Answers of {self.user.email}"
-    
+
+
+class ProjectCretientials(models.Model):
+    OPENAI_API_KEY = models.CharField(max_length=255, blank=True, null=True)
+    STRIPE_PUBLISHABLE_KEY = models.CharField(max_length=255, blank=True, null=True)
+    STRIPE_SECRET_KEY = models.CharField(max_length=255, blank=True, null=True)
+    STRIPE_WEBHOOK_SECRET = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "Project Credentials"

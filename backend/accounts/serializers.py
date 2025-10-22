@@ -1,15 +1,15 @@
-from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth import get_user_model
+from django.contrib.auth import password_validation
 from django.contrib.auth.hashers import check_password
+from django.contrib.auth.password_validation import validate_password
+from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.validators import UniqueValidator
-from django.contrib.auth import password_validation
-from django.contrib.auth import get_user_model
+
 from .celery_task import Celery_send_mail
-from rest_framework import serializers
 from .models import *
 
 User = get_user_model()
-
 
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -33,7 +33,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         validated_data.pop('password2')
         # referral_code = validated_data.pop('referral_code_used', None)
         referral_code = self.context.get("referral_code_used")
-        
+
         referrer = None
         if referral_code:
             try:
@@ -52,8 +52,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             user.referred_by = referral_code
 
         user.save()
-            
-            
+
         # generate otp
         active_code = PasswordResetCode.objects.create(user=user)
         Celery_send_mail.delay(
@@ -69,7 +68,6 @@ class RegisterSerializer(serializers.ModelSerializer):
             )
         )
         return user
-
 
 
 class VerifyActiveCodeSerializer(serializers.Serializer):
@@ -96,7 +94,6 @@ class VerifyActiveCodeSerializer(serializers.Serializer):
         self.reset_code.is_used = True
         self.reset_code.save()
         return self.user
-
 
 
 class ResendCodeSerializer(serializers.Serializer):
@@ -148,10 +145,9 @@ class ForgotPasswordSerializer(serializers.Serializer):
                 f"Thanks,\n"
                 f"Support Team"
             ),
-                subject="Reset Your Password – Action Required"
+            subject="Reset Your Password – Action Required"
         )
         return user
-
 
 
 class VerifyResetCodeSerializer(serializers.Serializer):
@@ -168,12 +164,13 @@ class VerifyResetCodeSerializer(serializers.Serializer):
         # Optional: check expiry
         if reset_code.is_expired():
             raise serializers.ValidationError("Reset code has expired.")
-        
+
         # Store for view use
         self.user = user
         self.reset_code = reset_code
         return attrs
-    
+
+
 class UserRegistrationSerializer(serializers.Serializer):
     email = serializers.EmailField()
     code = serializers.CharField(max_length=6)
@@ -219,6 +216,7 @@ class VerfifyCodeSerializer(serializers.Serializer):
         self.user = user
         self.reset_code = reset_code
         return attrs
+
     def save(self):
         self.user.is_active = False
         self.user.save()
@@ -235,8 +233,8 @@ class SetNewPasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password2']:
-            raise serializers.ValidationError({"new_password2":"Password fields didn't match."})
-        
+            raise serializers.ValidationError({"new_password2": "Password fields didn't match."})
+
         try:
             user = User.objects.get(email=attrs['email'])
             reset_code = PasswordResetCode.objects.get(user=user, code=attrs['code'], is_used=False)
@@ -257,8 +255,6 @@ class SetNewPasswordSerializer(serializers.Serializer):
         self.reset_code.save()
 
 
-
-
 class ChangePasswordSerializer(serializers.Serializer):
     old_password = serializers.CharField(required=True)
     new_password = serializers.CharField(required=True)
@@ -275,13 +271,13 @@ class ChangePasswordSerializer(serializers.Serializer):
             raise serializers.ValidationError({"confirm_password": "New passwords do not match."})
         if data['old_password'] == data['new_password']:
             raise serializers.ValidationError({"new_password": "New password must be different from the old password."})
-        
+
         # Optional: enforce Django's password validators (e.g. min length, complexity)
         validate_password(data['new_password'], self.context['request'].user)
-        
+
         return data
-    
-    
+
+
 class LogoutSerializer(serializers.Serializer):
     refresh = serializers.CharField()
 
@@ -291,22 +287,21 @@ class UserUpdateSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ['id', 'full_name', 'email', 'phone_number', 'profile_picture', 'is_active']
         read_only_fields = ['id']
-        
 
 
 class UpdateProfileSerializer(serializers.ModelSerializer):
     old_password = serializers.CharField(write_only=True, required=False)
     new_password = serializers.CharField(write_only=True, required=False)
-    
+
     class Meta:
         model = CustomUser
-        fields = ['full_name','email','phone_number', 'profile_picture', 'old_password', 'new_password']
+        fields = ['full_name', 'email', 'phone_number', 'profile_picture', 'old_password', 'new_password']
 
     def validate(self, attrs):
         user = self.instance
         old_password = attrs.get('old_password')
         new_password = attrs.get('new_password')
-        
+
         if old_password or new_password:
             if not old_password:
                 raise serializers.ValidationError({"old_password": "Old password is required to set a new password."})
@@ -315,8 +310,9 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
             if not check_password(old_password, user.password):
                 raise serializers.ValidationError({"old_password": "Old password is incorrect."})
             password_validation.validate_password(new_password, user)
-        
+
         return attrs
+
     def update(self, instance, validated_data):
         instance.full_name = validated_data.get('full_name', instance.full_name)
         instance.email = validated_data.get('email', instance.email)
@@ -334,28 +330,30 @@ class UpdateProfileSerializer(serializers.ModelSerializer):
 
         instance.save()
         return instance
-    
+
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ['id',
                   'email',
                   'full_name',
-                  'phone_number', 
+                  'phone_number',
                   'profile_picture',
                   'is_active'
                   ]
-        
+
     # def get_count_referrals(self, obj):
     #     return CustomUser.objects.filter(referred_by=obj.referral_code).count()
+
 
 class UserDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = ['id', 
-                  'email', 
-                  'full_name', 
-                  'phone_number', 
+        fields = ['id',
+                  'email',
+                  'full_name',
+                  'phone_number',
                   'profile_picture',
                   'is_active'
                   ]
@@ -364,12 +362,34 @@ class UserDetailSerializer(serializers.ModelSerializer):
 class UserQuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserQuestionAnswer
-        fields = ['id','user_id', 'user', 'skin_status', 'hydration_goal', 'feeling_today', 'how_many_prayers', 'top_skin_goal', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'created_at', 'updated_at','user_id' ,"user"]
-        
+        fields = ['id', 'user_id', 'user', 'skin_status', 'hydration_goal', 'feeling_today', 'how_many_prayers',
+                  'top_skin_goal', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'user_id', "user"]
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
         representation['user_id'] = instance.user.id
         representation['user'] = instance.user.full_name or instance.user.email
-    
+
         return representation
+
+
+class ProjectCretientialsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectCretientials
+        fields = [
+            'id',
+            'OPENAI_API_KEY',
+            'STRIPE_PUBLISHABLE_KEY',
+            'STRIPE_SECRET_KEY',
+            'STRIPE_WEBHOOK_SECRET',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['id', 'created_at', 'updated_at']
+
+    def validate(self, attrs):
+        # Allow only one object to be created
+        if self.instance is None and ProjectCretientials.objects.exists():
+            raise ValidationError("Only one Project Credential can be created. Delete the existing one to add another.")
+        return attrs
