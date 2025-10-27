@@ -215,7 +215,7 @@ class PlanUpdateView(generics.RetrieveUpdateAPIView):
 
 class CreateSubscriptionView(APIView):
     def post(self, request):
-        plan_id = request.data.get("plan_id")  # Pass Plan PK from frontend
+        plan_id = request.data.get("plan_id")  
         success_url = request.data.get(
             "success_url",
             f"{request.build_absolute_uri('/api/payment/payment-success/')}"
@@ -609,9 +609,10 @@ def stripe_webhook(request):
                     stripe_subscription = stripe.Subscription.retrieve(obj["subscription"])
                     logger.info(f"Retrieved Stripe subscription: {stripe_subscription.id}")
                     
-                    # Update the pending subscription in our database
+                    # Find the pending subscription by user_id and customer_id instead of stripe_subscription_id
                     subscription = Subscription.objects.filter(
                         user_id=user_id,
+                        stripe_customer_id=obj.get("customer"),
                         status="pending"
                     ).first()
                     
@@ -645,8 +646,14 @@ def stripe_webhook(request):
                         
                         logger.info(f"Updated subscription {subscription.id} with Stripe data")
                         
+                        # Process referral benefits after successful subscription creation
+                        try:
+                            process_referral_benefits(subscription.user, subscription)
+                        except Exception as e:
+                            logger.error(f"Error processing referral benefits: {str(e)}")
+                        
                     else:
-                        logger.warning(f"No pending subscription found for user {user_id}")
+                        logger.warning(f"No pending subscription found for user {user_id} and customer {obj.get('customer')}")
                         
                 except Exception as e:
                     logger.error(f"Error processing checkout.session.completed: {str(e)}")
@@ -655,50 +662,40 @@ def stripe_webhook(request):
             logger.info("Processing customer.subscription.created")
             
             try:
-                # Safely handle timestamps
-                trial_end = None
-                current_period_end = None
+                # First, try to find existing subscription by stripe_subscription_id
+                subscription = Subscription.objects.filter(stripe_subscription_id=obj["id"]).first()
                 
-                if obj.get("trial_end"):
-                    trial_end = make_aware(
-                        datetime.datetime.fromtimestamp(obj["trial_end"])
-                    )
+                if not subscription:
+                    # If not found, try to find by customer_id and status
+                    subscription = Subscription.objects.filter(
+                        stripe_customer_id=obj.get("customer"),
+                        status="pending"
+                    ).first()
                 
-                if obj.get("current_period_end"):
-                    current_period_end = make_aware(
-                        datetime.datetime.fromtimestamp(obj["current_period_end"])
-                    )
+                if subscription:
+                    # Update existing subscription
+                    trial_end = None
+                    current_period_end = None
+                    
+                    if obj.get("trial_end"):
+                        trial_end = make_aware(
+                            datetime.datetime.fromtimestamp(obj["trial_end"])
+                        )
+                    
+                    if obj.get("current_period_end"):
+                        current_period_end = make_aware(
+                            datetime.datetime.fromtimestamp(obj["current_period_end"])
+                        )
+                    
+                    subscription.stripe_subscription_id = obj["id"]
+                    subscription.status = obj["status"]
+                    subscription.trial_end = trial_end
+                    subscription.current_period_end = current_period_end
+                    subscription.save()
+                    
+                    logger.info(f"Updated existing subscription {subscription.id} with Stripe ID: {obj['id']}")
                 else:
-                    # Fallback: calculate based on plan if Stripe doesn't provide it
-                    try:
-                        subscription = Subscription.objects.get(stripe_subscription_id=obj["id"])
-                        if subscription.plan:
-                            current_period_end = calculate_current_period_end(
-                                subscription.plan, 
-                                subscription.created_at
-                            )
-                    except Subscription.DoesNotExist:
-                        pass
-                
-                Subscription.objects.update_or_create(
-                    stripe_subscription_id=obj["id"],
-                    defaults={
-                        "status": obj["status"],
-                        "trial_end": trial_end,
-                        "current_period_end": current_period_end,
-                    },
-                )
-                logger.info(f"Created/updated subscription for Stripe ID: {obj['id']}")
-                
-                # Process referral benefits for subscription.created event
-                try:
-                    subscription = Subscription.objects.get(stripe_subscription_id=obj["id"])
-                    # if subscription.user:
-                    #     process_referral_benefits(subscription.user, subscription)
-                except Subscription.DoesNotExist:
-                    logger.error(f"Subscription with Stripe ID {obj['id']} not found for referral processing")
-                except Exception as e:
-                    logger.error(f"Error in referral processing for subscription.created: {str(e)}")
+                    logger.warning(f"No matching subscription found for Stripe subscription {obj['id']}")
                 
             except Exception as e:
                 logger.error(f"Error processing customer.subscription.created: {str(e)}")
