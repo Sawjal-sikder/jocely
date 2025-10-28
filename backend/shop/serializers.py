@@ -20,7 +20,7 @@ class CreateProductSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'category', 'name', 'description', 'image1', 'image2', 'image3', 'price', 'discount_price', 'type_of_product', 'is_active', 'created_at', 'updated_at']
+        fields = ['id', 'category', 'name', 'description', 'image1', 'image2', 'image3', 'price','stock', 'discount_price', 'type_of_product', 'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
 
         
@@ -28,7 +28,7 @@ class ProductListSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Product
-        fields = ['id', 'category', 'name', 'description', 'image1', 'image2', 'image3', 'price', 'discount_price', 'type_of_product', 'is_active', 'created_at', 'updated_at']
+        fields = ['id', 'category', 'name', 'description', 'image1', 'image2', 'image3', 'price','stock', 'discount_price', 'type_of_product', 'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
         
     def to_representation(self, instance):
