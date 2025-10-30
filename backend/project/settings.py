@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'accounts',
     'payment',
     "shop",
+    "community",
 
 ]
 
@@ -255,16 +256,16 @@ SOCIALACCOUNT_ADAPTER = 'allauth.socialaccount.adapter.DefaultSocialAccountAdapt
 #     }
 # }
 
-SOCIALACCOUNT_PROVIDERS = {
-    'google': {
-        'APP': {
-            'client_id': os.getenv('GOOGLE_CLIENT_ID'),
-            'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
-        },
-        'SCOPE': ['profile', 'email'],
-        'AUTH_PARAMS': {'access_type': 'online'},
-    }
-}
+# SOCIALACCOUNT_PROVIDERS = {
+#     'google': {
+#         'APP': {
+#             'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+#             'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
+#         },
+#         'SCOPE': ['profile', 'email'],
+#         'AUTH_PARAMS': {'access_type': 'online'},
+#     }
+# }
 
 LOGIN_URL = os.getenv('LOGIN_URL', '/auth/login/')
 LOGOUT_URL = os.getenv('LOGOUT_URL', '/auth/logout/')
@@ -281,6 +282,9 @@ CELERY_RESULT_BACKEND = os.getenv('CELERY_RESULT_BACKEND', 'redis://127.0.0.1:63
 # for Google OAuth (social login)
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
 GOOGLE_CLIENT_SECRET = os.getenv('GOOGLE_CLIENT_SECRET')
+
+# for apple OAuth (social login)
+APPLE_CLIENT_ID = os.getenv('APPLE_CLIENT_ID')
 
 
 CELERY_ACCEPT_CONTENT = ['json']
