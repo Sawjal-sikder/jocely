@@ -217,3 +217,22 @@ class CartDetailView(generics.RetrieveUpdateDestroyAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response({"message": "Cart item updated successfully.", "data": serializer.data}, status=status.HTTP_200_OK)
+    
+    
+    
+# Order views
+class OrderCreateView(generics.CreateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = CreateOrderSerializer
+    
+    def perform_create(self, serializer):
+        return serializer.save()
+    
+
+class OrderListView(generics.ListAPIView):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return Order.objects.filter(user=user)

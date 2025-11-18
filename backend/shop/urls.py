@@ -19,4 +19,8 @@ urlpatterns = [
     # Cart URLs can be added later as needed
     path('create/add-cart/', CartView.as_view(), name='cart-create'),
     path('cart/details/<int:id>/', CartDetailView.as_view(), name='cart-details'),
+    
+    # order URLs can be added later as needed
+    path('orders/create/', OrderCreateView.as_view(), name='order-create'),
+    path('orders/list/user/', OrderListView.as_view(), name='order-list-user'),
 ]

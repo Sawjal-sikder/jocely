@@ -68,3 +68,71 @@ class CartSerializer(serializers.ModelSerializer):
     def get_total_price(self, obj):
         return obj.get_total_price()
     
+
+
+# OrderSerializer
+class OrderDetailSerializer(serializers.ModelSerializer):
+    product_name = serializers.ReadOnlyField(source='product.name')
+    class Meta:
+        model = OrderDetail
+        fields = ['id', 'order', 'product', 'product_name', 'quantity', 'price']
+        read_only_fields = ['id']
+        
+        
+class OrderSerializer(serializers.ModelSerializer):
+    order_details = OrderDetailSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'total', 'status', 'payment_method', 'payment_status', 'shipping_address', 'notes', 'created_at', 'updated_at', 'order_details']
+        read_only_fields = ['id', 'total', 'payment_method', 'created_at', 'updated_at']
+        
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['user'] = instance.user.full_name or instance.user.email
+        return representation
+        
+class CreateOrderSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Order
+        fields = ['id', 'shipping_address', 'notes']
+        read_only_fields = ['id']
+        
+    def validate(self, attrs):
+        user = self.context['request'].user
+        if not Cart.objects.filter(user=user).exists():
+            raise serializers.ValidationError("Cart is empty. Cannot create order.")
+        return attrs
+    
+    def create(self, validated_data):
+        user = self.context['request'].user
+        cart_items = Cart.objects.filter(user=user)
+        
+        # total calculation
+        total_amount = 0
+        for item in cart_items:
+            price = item.product.discount_price if item.product.discount_price else item.product.price
+            total_amount += price * item.quantity
+        
+        # create order
+        order = Order.objects.create(
+            user=user,
+            total=total_amount,
+            shipping_address=validated_data.get('shipping_address'),
+            notes=validated_data.get('notes', '')
+        )
+        
+        # create order details
+        for item in cart_items:
+            price = item.product.discount_price if item.product.discount_price else item.product.price
+            OrderDetail.objects.create(
+                order=order,
+                product=item.product,
+                quantity=item.quantity,
+                price=price
+            )
+        
+        cart_items.delete()
+        
+        return order
