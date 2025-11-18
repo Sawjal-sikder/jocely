@@ -39,3 +39,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  
+  admin_web:
+    build:
+      context: ./admin_panel_jocely
+      dockerfile: Dockerfile
+    image: jocely_dashboard:dev
+    container_name: jocely_dashboard
+    ports:
+      - "14006:14006"
+    volumes:
+      - ./admin_panel_jocely:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+    restart: unless-stopped
